@@ -14,6 +14,7 @@ const { isClass } = require('../../util/util');
  * @see MonitorStore
  * @see ProviderStore
  * @see TaskStore
+ * @extends external:Collection
  */
 class Store extends Collection {
 
@@ -84,18 +85,22 @@ class Store extends Collection {
 	 * @param {boolean} [core=false] If the file is located in the core directory or not
 	 * @returns {?Piece}
 	 */
-	load(file, core = false) {
-		const dir = core ? this.coreDir : this.userDir;
-		const loc = join(dir, ...file);
+	async load(file, core = false) {
+		const loc = join(core ? this.coreDir : this.userDir, ...file);
 		let piece = null;
 		try {
-			const Piece = (req => req.default || req)(require(loc));
+			let Piece;
+			if (extname(loc) === '.mjs') {
+				Piece = (await import(`file://${loc}?query=${Date.now()}`)).default;
+			} else {
+				Piece = (req => req.default || req)(require(loc));
+				delete require.cache[loc];
+			}
 			if (!isClass(Piece)) throw new TypeError(`Failed to load file '${loc}'. The exported structure is not a class.`);
 			piece = this.set(new Piece(this.client, this, file, core));
 		} catch (error) {
 			this.client.emit('wtf', `Failed to load file '${loc}'. Error:\n${error.stack || error}`);
 		}
-		delete require.cache[loc];
 		return piece;
 	}
 
@@ -168,7 +173,8 @@ class Store extends Collection {
 	 */
 	static async walk(store, core = false) {
 		const dir = core ? store.coreDir : store.userDir;
-		const files = await fs.scan(dir, { filter: (stats, path) => stats.isFile() && extname(path) === '.js' }).catch(() => { fs.ensureDir(dir).catch(err => store.client.emit('error', err)); });
+		const files = await fs.scan(dir, { filter: (stats, path) => stats.isFile() && ['.js', '.mjs'].includes(extname(path)) })
+			.catch(() => { fs.ensureDir(dir).catch(err => store.client.emit('error', err)); });
 		if (!files) return true;
 
 		return Promise.all([...files.keys()].map(file => store.load(relative(dir, file).split(sep), core)));

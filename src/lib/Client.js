@@ -30,6 +30,14 @@ const constants = require('./util/constants');
 const Stopwatch = require('./util/Stopwatch');
 const util = require('./util/util');
 
+// Dev's package.json
+let main;
+try {
+	({ main } = require(path.join(process.cwd(), 'package.json')));
+} catch (error) {
+	// noop
+}
+
 /**
  * The client for handling everything. See {@tutorial GettingStarted} for more information how to get started using this class.
  * @extends external:Client
@@ -135,7 +143,7 @@ class KlasaClient extends Discord.Client {
 		 * @since 0.0.1
 		 * @type {string}
 		 */
-		this.clientBaseDir = path.dirname(require.main.filename);
+		this.clientBaseDir = main ? path.resolve(process.cwd(), path.dirname(main)) : path.join(process.cwd(), 'src');
 
 		/**
 		 * The console for this instance of klasa. You can disable timestamps, colors, and add writable streams as config options to configure this.
