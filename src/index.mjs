@@ -77,4 +77,4 @@ export { default as Type } from './lib/util/Type';
 export { default as util } from './lib/util/util';
 
 // version
-export const version = klasaPackage.version;
+export const { version } = klasaPackage;
