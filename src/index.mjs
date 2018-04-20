@@ -10,7 +10,6 @@ export { default as KlasaMessage } from './lib/extensions/KlasaMessage';
 export { default as KlasaUser } from './lib/extensions/KlasaUser';
 
 // lib/parsers
-export { default as ArgResolver } from './lib/parsers/ArgResolver';
 export { default as Resolver } from './lib/parsers/Resolver';
 export { default as SettingResolver } from './lib/parsers/SettingResolver';
 
@@ -35,6 +34,8 @@ export { default as Piece } from './lib/structures/base/Piece';
 export { default as Store } from './lib/structures/base/Store';
 
 // lib/structures
+export { default as Argument } from './lib/structures/Argument';
+export { default as ArgumentStore } from './lib/structures/ArgumentStore';
 export { default as Command } from './lib/structures/Command';
 export { default as CommandStore } from './lib/structures/CommandStore';
 export { default as Event } from './lib/structures/Event';
