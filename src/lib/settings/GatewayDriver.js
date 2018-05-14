@@ -113,7 +113,8 @@ class GatewayDriver {
 				min: null,
 				max: 10,
 				array: Array.isArray(this.client.options.prefix),
-				configurable: true
+				configurable: true,
+				resolve: false
 			},
 			language: {
 				type: 'language',
@@ -121,7 +122,8 @@ class GatewayDriver {
 				min: null,
 				max: null,
 				array: false,
-				configurable: true
+				configurable: true,
+				resolve: false
 			},
 			disableNaturalPrefix: {
 				type: 'boolean',
@@ -129,7 +131,8 @@ class GatewayDriver {
 				min: null,
 				max: null,
 				array: false,
-				configurable: Boolean(this.client.options.regexPrefix)
+				configurable: Boolean(this.client.options.regexPrefix),
+				resolve: false
 			},
 			disabledCommands: {
 				type: 'command',
@@ -137,7 +140,8 @@ class GatewayDriver {
 				min: null,
 				max: null,
 				array: true,
-				configurable: true
+				configurable: true,
+				resolve: false
 			}
 		};
 	}
@@ -166,7 +170,8 @@ class GatewayDriver {
 				min: null,
 				max: null,
 				array: true,
-				configurable: true
+				configurable: true,
+				resolve: false
 			},
 			guildBlacklist: {
 				type: 'string',
@@ -174,7 +179,8 @@ class GatewayDriver {
 				min: 17,
 				max: 19,
 				array: true,
-				configurable: true
+				configurable: true,
+				resolve: false
 			},
 			schedules: {
 				type: 'any',
@@ -182,7 +188,8 @@ class GatewayDriver {
 				min: null,
 				max: null,
 				array: true,
-				configurable: false
+				configurable: false,
+				resolve: false
 			}
 		};
 	}

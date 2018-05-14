@@ -1,4 +1,4 @@
-const { isObject, makeObject, deepClone, tryParse, toTitleCase, arraysStrictEquals, mergeObjects, getDeepTypeName, objectToTuples } = require('../util/util');
+const { isObject, deepClone, tryParse, toTitleCase, arraysStrictEquals, getDeepTypeName, objectToTuples } = require('../util/util');
 const SchemaFolder = require('./SchemaFolder');
 const SchemaPiece = require('./SchemaPiece');
 
@@ -331,12 +331,33 @@ class Configuration {
 		const data = await this.gateway.provider.get(this.gateway.type, this.id);
 		if (data) {
 			if (!this._existsInDB) this._existsInDB = true;
-			this._patch(data);
+			if (this.gateway.schema.shouldResolve()) {
+				const resolvedData = await this.resolve(data);
+				this._patch(resolvedData);
+			} else {
+				this._patch(data);
+			}
 		}
 
 		this._syncStatus = null;
 		return this;
 	}
+
+	async resolve(data, parent) {
+		const resolved = await Promise.all(Object.entries(data)
+			.filter(([key]) => key !== "id")
+			.map(async ([key, dat]) => {
+				const isFolder = isObject(dat);
+				const { piece, route } = this.gateway.getPath(parent ? `${parent}.${key}` : key, { piece: !isFolder });
+				if (isFolder) return { [key]: await this.resolve(dat, route.join(".")) };
+				if (!piece.resolve) return { [key]: dat } ;
+				if (piece.array) return { [key]: await Promise.all(dat.map(d => piece.parse(d, this.id, { silent: true }))) };
+				return { [key]: await piece.parse(dat, this.id, { silent: true }) };
+			}));
+		return Object.assign({}, ...resolved);
+	}
+
+
 
 	/**
 	 * Get a value from the cache.
@@ -387,7 +408,7 @@ class Configuration {
 					`The path ${key} does not store multiple values.`);
 				continue;
 			}
-			promises.push(this._parse(value, guild, options, result, path));
+			promises.push(this._parse(value, guild, Object.assign(options, { resolve: false }), result, path));
 		}
 		if (promises.length) {
 			await Promise.all(promises);
@@ -409,7 +430,7 @@ class Configuration {
 	 */
 	async _parse(value, guild, options, result, { piece, route }) {
 		const parsedID = value !== null ?
-			await (Array.isArray(value) ? this._parseAll(piece, value, guild, result.errors) : piece.parse(value, guild)) :
+			await (Array.isArray(value) ? this._parseAll(piece, value, guild, result.errors) : piece.parse(value, guild, false)) :
 			deepClone(piece.default);
 
 		if (piece.array && !Array.isArray(value)) {
@@ -433,16 +454,7 @@ class Configuration {
 		}
 		const oldClone = this.client.listenerCount('configUpdateEntry') ? this.clone() : null;
 
-		if (this.gateway.sql) {
-			const keys = new Array(updated.length), values = new Array(updated.length);
-			for (let i = 0; i < updated.length; i++) [keys[i], values[i]] = updated[i].data;
-			await this.gateway.provider.update(this.gateway.type, this.id, keys, values);
-		} else {
-			const updateObject = {};
-			for (const entry of updated) mergeObjects(updateObject, makeObject(entry.data[0], entry.data[1]));
-			await this.gateway.provider.update(this.gateway.type, this.id, updateObject);
-		}
-
+		await this.gateway.provider.update(this.gateway.type, this.id, updated);
 		if (oldClone !== null) this.client.emit('configUpdateEntry', oldClone, this, updated);
 	}
 
@@ -488,7 +500,7 @@ class Configuration {
 	 */
 	async _parseAll(piece, values, guild, errors) {
 		const output = [];
-		await Promise.all(values.map(value => piece.parse(value, guild)
+		await Promise.all(values.map(value => piece.parse(value, guild, false)
 			.then(parsed => output.push(parsed))
 			.catch(error => errors.push(error))));
 
