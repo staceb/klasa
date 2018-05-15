@@ -408,7 +408,7 @@ class Configuration {
 					`The path ${key} does not store multiple values.`);
 				continue;
 			}
-			promises.push(this._parse(value, guild, Object.assign(options, { resolve: false }), result, path));
+			promises.push(this._parse(value, guild, { ...options, resolve: false }), result, path));
 		}
 		if (promises.length) {
 			await Promise.all(promises);
