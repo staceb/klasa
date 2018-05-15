@@ -70,6 +70,15 @@ class Configuration {
 		 */
 		Object.defineProperty(this, '_existsInDB', { value: false, writable: true });
 
+
+		/**
+		 * Whether or not this configuration is synced up with the provider providing it.
+		 * @since 0.5.0
+		 * @type {boolean}
+		 * @name Configuration#synced
+		 */
+		Object.defineProperty(this, 'synced', { value: false, writable: true });
+
 		/**
 		 * The sync status for this Configuration instance.
 		 * @since 0.5.0
@@ -105,25 +114,6 @@ class Configuration {
 		return new this.gateway.Configuration(this.gateway, clone);
 	}
 
-	/**
-	 * Wait for the sync
-	 * @since 0.5.0
-	 * @returns {Promise<this>}
-	 */
-	waitSync() {
-		if (this._syncStatus) return this._syncStatus;
-		return Promise.resolve(this);
-	}
-
-	/**
-	 * Sync the data from the database with the cache.
-	 * @since 0.5.0
-	 * @returns {this}
-	 */
-	async sync() {
-		if (!this._syncStatus) this._syncStatus = this._sync();
-		return this._syncStatus;
-	}
 
 	/**
 	 * Delete this entry from the database and cache.
@@ -327,7 +317,7 @@ class Configuration {
 	 * @since 0.5.0
 	 * @returns {this}
 	 */
-	async _sync() {
+	async sync() {
 		const data = await this.gateway.provider.get(this.gateway.type, this.id);
 		if (data) {
 			if (!this._existsInDB) this._existsInDB = true;
@@ -339,7 +329,7 @@ class Configuration {
 			}
 		}
 
-		this._syncStatus = null;
+		this.synced = true;
 		return this;
 	}
 
@@ -408,7 +398,7 @@ class Configuration {
 					`The path ${key} does not store multiple values.`);
 				continue;
 			}
-			promises.push(this._parse(value, guild, { ...options, resolve: false }), result, path));
+			promises.push(this._parse(value, guild, { ...options, resolve: false }, result, path));
 		}
 		if (promises.length) {
 			await Promise.all(promises);
