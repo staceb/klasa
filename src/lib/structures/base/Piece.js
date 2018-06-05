@@ -1,5 +1,6 @@
 const { basename, extname } = require('path');
 const { mergeDefault } = require('../../util/util');
+const { join } = require('path');
 
 /**
  * The common class for all pieces
@@ -99,6 +100,16 @@ class Piece {
 	}
 
 	/**
+	 * The absolute path to this piece
+	 * @since 0.5.0
+	 * @type {string}
+	 * @readonly
+	 */
+	get path() {
+		return join(this.dir, ...this.file);
+	}
+
+	/**
 	 * Reloads this piece
 	 * @since 0.0.1
 	 * @returns {Piece} The newly loaded piece
@@ -172,6 +183,7 @@ class Piece {
 		return {
 			dir: this.dir,
 			file: this.file,
+			path: this.path,
 			name: this.name,
 			type: this.type,
 			enabled: this.enabled
